@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Core.Systems.Movement
 {
-    [RequireComponent(typeof(Rigidbody2D), typeof(Collider2D))]
+    [RequireComponent(typeof(Rigidbody2D), typeof(Collider2D), typeof(SpriteRenderer))]
     public sealed class PlayerMotor2D : MonoBehaviour
     {
         [Header("Horizontal Movement")]
@@ -30,6 +30,8 @@ namespace Core.Systems.Movement
         [SerializeField] private LayerMask _groundLayer;
 
         private Rigidbody2D _rb;
+        private SpriteRenderer _spriteRenderer;
+
         private float _horizontalInput;
         private bool _isJumpHeld;
         private float _coyoteTimer;
@@ -40,20 +42,27 @@ namespace Core.Systems.Movement
         private bool _canDash = true;
         private float _facingDirection = 1f;
 
+        // Propiedades públicas para alimentar el Animator Controller sin acoplamiento
         public bool IsDashing => _isDashing;
         public bool IsGrounded => _isGrounded;
+        public float HorizontalVelocity => Mathf.Abs(_rb.linearVelocity.x);
+        public float VerticalVelocity => _rb.linearVelocity.y;
 
         private void Awake()
         {
             _rb = GetComponent<Rigidbody2D>();
+            _spriteRenderer = GetComponent<SpriteRenderer>();
         }
 
         public void SetMovementInput(float horizontalInput)
         {
             _horizontalInput = horizontalInput;
+
+            // Volteo visual inmediato según la dirección de movimiento
             if (Mathf.Abs(horizontalInput) > 0.05f)
             {
                 _facingDirection = Mathf.Sign(horizontalInput);
+                _spriteRenderer.flipX = _facingDirection < 0f;
             }
         }
 
