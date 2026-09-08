@@ -29,6 +29,9 @@ namespace Core.Systems.Movement
         [SerializeField] private Vector2 _groundCheckSize = new Vector2(0.75f, 0.1f);
         [SerializeField] private LayerMask _groundLayer;
 
+        [Header("Attack Detection Point")]
+        [SerializeField] private Transform _attackPointTransform;
+
         private Rigidbody2D _rb;
         private SpriteRenderer _spriteRenderer;
 
@@ -58,11 +61,19 @@ namespace Core.Systems.Movement
         {
             _horizontalInput = horizontalInput;
 
-            // Volteo visual inmediato según la dirección de movimiento
+            // Volteo visual y volteo del punto de ataque
             if (Mathf.Abs(horizontalInput) > 0.05f)
             {
                 _facingDirection = Mathf.Sign(horizontalInput);
                 _spriteRenderer.flipX = _facingDirection < 0f;
+
+                // Esto voltea la posición del golpe hacia donde mira el personaje:
+                if (_attackPointTransform != null)
+                {
+                    Vector3 pos = _attackPointTransform.localPosition;
+                    pos.x = Mathf.Abs(pos.x) * _facingDirection;
+                    _attackPointTransform.localPosition = pos;
+                }
             }
         }
 
