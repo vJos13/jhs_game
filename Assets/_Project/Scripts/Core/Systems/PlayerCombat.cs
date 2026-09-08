@@ -1,5 +1,6 @@
 using UnityEngine;
 using Core.Interactions;
+using Gameplay.Environment;
 
 namespace Core.Systems.Combat
 {
@@ -8,12 +9,12 @@ namespace Core.Systems.Combat
         [Header("Attack Settings")]
         [SerializeField] private KeyCode _attackKey = KeyCode.Mouse1;
         [SerializeField] private int _damage = 1;
-        [SerializeField] private float _attackCooldown = 0.35f;
+        [SerializeField] private float _attackCooldown = 0.25f;
 
         [Header("Hitbox Detection")]
         [SerializeField] private Transform _attackPoint;
-        [SerializeField] private Vector2 _attackSize = new Vector2(0.65f, 0.55f);
-        [SerializeField] private LayerMask _enemyLayers;
+        [SerializeField] private Vector2 _attackSize = new Vector2(0.55f, 0.45f);
+        [SerializeField] private LayerMask _enemyLayers = ~0;
 
         private Animator _animator;
         private float _nextAttackTime;
@@ -26,7 +27,12 @@ namespace Core.Systems.Combat
 
         private void Update()
         {
-            if ((Input.GetMouseButtonDown(1) || Input.GetKeyDown(_attackKey)) && Time.time >= _nextAttackTime)
+            bool attackInput = Input.GetMouseButtonDown(1) || 
+                               Input.GetMouseButtonDown(0) || 
+                               Input.GetKeyDown(_attackKey) || 
+                               Input.GetKeyDown(KeyCode.J);
+
+            if (attackInput && Time.time >= _nextAttackTime)
             {
                 PerformAttack();
                 _nextAttackTime = Time.time + _attackCooldown;
@@ -40,9 +46,9 @@ namespace Core.Systems.Combat
                 _animator.SetTrigger(AttackTriggerHash);
             }
 
-            if (_attackPoint == null) return;
+            Vector2 center = _attackPoint != null ? (Vector2)_attackPoint.position : (Vector2)transform.position;
 
-            Collider2D[] hitColliders = Physics2D.OverlapBoxAll(_attackPoint.position, _attackSize, 0f, _enemyLayers);
+            Collider2D[] hitColliders = Physics2D.OverlapBoxAll(center, _attackSize, 0f, _enemyLayers);
 
             foreach (var col in hitColliders)
             {
@@ -52,14 +58,18 @@ namespace Core.Systems.Combat
                 {
                     damageable.TakeDamage(_damage);
                 }
+                else if (col.TryGetComponent<TrainingDummy>(out var dummy))
+                {
+                    dummy.TakeDamage(_damage);
+                }
             }
         }
 
         private void OnDrawGizmosSelected()
         {
-            if (_attackPoint == null) return;
+            Vector2 center = _attackPoint != null ? (Vector2)_attackPoint.position : (Vector2)transform.position;
             Gizmos.color = Color.cyan;
-            Gizmos.DrawWireCube(_attackPoint.position, _attackSize);
+            Gizmos.DrawWireCube(center, _attackSize);
         }
     }
 }
